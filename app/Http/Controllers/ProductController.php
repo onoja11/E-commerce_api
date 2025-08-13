@@ -19,21 +19,35 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'image' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-        $imagePath = $request->file('image') ? $request->file('image')->store('images', 'public') : null;
-        $request->merge(['image' => $imagePath]);
-        $product = Product::create($request->all());
-        return response()->json($product, 201);
+   public function store(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'required|string',
+        'price' => 'required|numeric',
+        'stock' => 'required|integer',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // added max
+        'category_id' => 'required|exists:categories,id',
+    ]);
+
+    $imagePath = null;
+
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('images', 'public');
     }
+
+    $product = Product::create([
+        'name' => $request->name,
+        'description' => $request->description,
+        'price' => $request->price,
+        'stock' => $request->stock,
+        'category_id' => $request->category_id,
+        'image' => $imagePath, // store path or null
+    ]);
+
+    return response()->json($product, 201);
+}
+
 
     /**
      * Display the specified resource.
@@ -55,7 +69,7 @@ class ProductController extends Controller
             'description' => 'sometimes|required|string',
             'price' => 'sometimes|required|numeric',
             'stock' => 'sometimes|required|integer',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image',
             'category_id' => 'sometimes|required|exists:categories,id',
         ]);
         if ($request->hasFile('image')) {
