@@ -54,7 +54,7 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = Product::findOrFail($id)->with('category');
+        $product = Product::with('category')->findOrFail($id);
         return response()->json($product);
     }
 
