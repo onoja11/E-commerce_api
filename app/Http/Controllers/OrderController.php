@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,73 +26,101 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        //
-        $user = Auth::user();
+public function store(Request $request)
+{
+    $user = Auth::user();
 
-        $cart = $request->input('cart'); 
-        if (!$cart || count($cart) == 0) {
-            return response()->json(['message' => 'Cart is empty'], 400);
-        }
+    $cart = $request->input('cart'); 
+    if (!$cart || count($cart) == 0) {
+        return response()->json(['message' => 'Cart is empty'], 400);
+    }
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
-        try {
-            $total = 0;
+    try {
+        $total = 0;
 
-            // Create order
-            $order = Order::create([
-                'user_id' => $user->id,
-                'total_amount' => 0,
-                'status' => 'pending'
-            ]);
+        // Create order
+        $order = Order::create([
+            'user_id' => $user->id,
+            'total_amount' => 0,
+            'status' => 'pending'
+        ]);
 
-            foreach ($cart as $item) {
-                $product = Product::findOrFail($item['product_id']);
+        foreach ($cart as $item) {
+            $product = Product::findOrFail($item['product_id']);
 
-                // Check stock
-                if ($product->stock < $item['quantity']) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => "Not enough stock for {$product->name}"
-                    ], 400);
-                }
-
-                // Calculate subtotal
-                $lineTotal = $product->price * $item['quantity'];
-                $total += $lineTotal;
-
-                // Create order item
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->price
-                ]);
-
-                // Reduce stock
-                $product->decrement('stock', $item['quantity']);
+            // Check stock
+            if ($product->stock <= 0) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => "Not enough stock for {$product->name}"
+                ], 400);
             }
 
-            // Update order total
-            $order->update(['total_amount' => $total]);
+            // Calculate subtotal
+            $lineTotal = $product->price * $item['quantity'];
+            $total += $lineTotal;
 
-            DB::commit();
+            // Create order item
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'quantity' => $item['quantity'],
+                'price' => $product->price
+            ]);
 
-            return response()->json([
-                'message' => 'Order placed successfully',
-                'order' => $order->load('items.product')
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Checkout failed',
-                'error' => $e->getMessage()
-            ], 500);
+            // Reduce stock
+            $product->decrement('stock', $item['quantity']);
         }
+
+        // Update order total
+        $order->update(['total_amount' => $total]);
+
+        $wallet = Wallet::where('user_id', $user->id)->get();
+        if($wallet->isEmpty()){
+            DB::rollBack();
+            return response()->json(['message' => 'Wallet not found'], 404);
+        }
+        $wallet = $wallet->first(); 
+        if ($wallet->balance < $total) {
+            DB::rollBack();
+            return response()->json(['message' => 'Insufficient wallet balance'], 400);
+        }
+        $wallet->decrement('balance', $total);
+
+
+        // Record transaction
+        Transaction::create([
+            'user_id' => $user->id,
+            'wallet_id' => $wallet->id,
+            'order_id' => $order->id,
+            'amount' => $total,
+            'description' => 'expense'
+        ]);
+
+        if($user->review_status !== 'stop'){
+            $user->review_status = true;
+            $user->save();  
+        }
+       
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Order placed successfully',
+            'order' => $order->load('items.product'),
+        ], 201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'Checkout failed',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     
 
@@ -98,6 +129,7 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
+
         $order = Order::with('items.product.category')->where('id', $id)->firstOrFail();
         return response()->json($order);
     }
@@ -108,6 +140,15 @@ class OrderController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $request->validate([
+            'status' => 'required',
+        ]);
+        $order = Order::findOrFail($id);
+        $order->update([
+            'status' => $request->status,
+        ]);
+        return response()->json("updated");
+
 
     }
 

@@ -49,4 +49,19 @@ class User extends Authenticatable
     public function isAdmin(){
         return $this->role === 'admin';
     }
+    
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }
