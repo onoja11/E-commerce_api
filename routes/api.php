@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
@@ -40,6 +41,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 
 Route::get('/wallet', [WalletController::class, 'index']);
 Route::apiResource('/wallets',WalletController::class)->middleware('auth:sanctum')->only('index');
+
+Route::post('/pay', [PaymentController::class, 'initialize'])->name('api.payment.initialize')->middleware('auth:sanctum');
+Route::get('/pay/callback', [PaymentController::class, 'callback'])->name('api.payment.callback');
 
 
 

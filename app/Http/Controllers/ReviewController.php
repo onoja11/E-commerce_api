@@ -28,7 +28,7 @@ class ReviewController extends Controller
         }
 
         $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
+            'rating' => 'required|integer|min:0|max:5',
             'comment' => ['required','string', new Clean()],
         ]);
 

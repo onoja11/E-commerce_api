@@ -1,0 +1,77 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\Transaction as ModelsTransaction;
+use App\Models\Wallet;
+use Binkode\Paystack\Support\Transaction;
+use Illuminate\Http\Request;
+
+class PaymentController extends Controller
+{
+    // Initialize payment
+    public function initialize(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:100',
+            'email'  => 'required|email',
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $payment = Transaction::initialize([
+            'amount'       => $request->amount * 100, // Paystack uses kobo
+            'email'        => $request->email,
+            'callback_url' => env("APP_URL").'/api/pay/callback', // ✅ point to backend, not frontend
+        ]);
+
+        if (!$payment['status']) {
+            return response()->json(['message' => 'Payment initialization failed'], 500);
+        }
+
+        // Save a pending transaction
+        $wallet = Wallet::where('user_id', $request->user_id)->first();
+        ModelsTransaction::create([
+            'user_id'   => $request->user_id,
+            'wallet_id' => $wallet->id,
+            'amount'    => $request->amount,
+            'description' => 'pending',
+            'order_id'  => null, // save reference
+            'reference' => $payment['data']['reference'],
+        ]);
+
+        return response()->json([
+            'authorization_url' => $payment['data']['authorization_url'],
+            'reference'         => $payment['data']['reference'],
+        ]);
+    }
+
+    // Callback after payment
+    public function callback(Request $request)
+    {
+        $reference = $request->query('reference');
+        $verification = Transaction::verify($reference);
+
+        if ($verification['status'] && $verification['data']['status'] === 'success') {
+            $amount = $verification['data']['amount'] / 100;
+
+            // Find pending transaction
+            $transaction = ModelsTransaction::where('reference', $reference)->first();
+            if ($transaction) {
+                $wallet = $transaction->wallet;
+
+                // Update wallet balance
+                $wallet->balance += $amount;
+                $wallet->save();
+
+                // Update transaction status
+                $transaction->description = 'income';
+                $transaction->save();
+            }
+
+            // Redirect back to React frontend
+            return redirect(env("FRONTEND_URL")."/wallet?status=success&reference={$reference}");
+        }
+
+        return redirect(env("FRONTEND_URL")."/wallet?status=failed&reference={$reference}");
+    }
+}

@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "binkode/laravel-paystack": "^1.4",
         "jonpurvis/squeaky": "^1.7",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",

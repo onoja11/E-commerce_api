@@ -15,7 +15,7 @@ class WalletController extends Controller
         $user = auth()->user();
 
         $transactions = $user->wallet->transactions()->with('order')->latest()->get();
-        $wallet = $user->wallet;
+        $wallet = $user->wallet->load('user');
         if (!$wallet) {
             return response()->json(['message' => 'Wallet not found'], 404);
         }

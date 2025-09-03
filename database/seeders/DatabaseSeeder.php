@@ -22,23 +22,23 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        // User::create([
-        //     'name' => 'Test User',
-        //     'email' => 'testingRole@example.com',
-        //     'password' => Hash::make('password'),
-        //     'role' => 'admin', 
-        // ]);
-        // Wallet::create([
-        //     'user_id' => 1,
-        //     'balance' => 1000,
-        // ]);
-        Transaction::create([
-            'user_id' => 2,
-            'wallet_id' => 2,
-            'order_id' => null,
-            'amount' => 1000,
-            'description' => 'income',
+        User::create([
+            'name' => 'Test User',
+            'email' => 'testingRole@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin', 
         ]);
+        Wallet::create([
+            'user_id' => 1,
+            'balance' => 1000,
+        ]);
+        // Transaction::create([
+        //     'user_id' => 2,
+        //     'wallet_id' => 2,
+        //     'order_id' => null,
+        //     'amount' => 1000,
+        //     'description' => 'income',
+        // ]);
         // Category::create([
         //     'name' => 'Electronics',
         // ]);
