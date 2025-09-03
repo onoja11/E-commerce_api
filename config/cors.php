@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://e-commerce-prll.onrender.com/'],
+    'allowed_origins' => ['https://e-commerce-prll.onrender.com'],
 
     'allowed_origins_patterns' => [],
 
