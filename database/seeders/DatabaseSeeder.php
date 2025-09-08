@@ -28,10 +28,10 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'admin', 
         ]);
-        // Wallet::create([
-        //     'user_id' => 1,
-        //     'balance' => 1000,
-        // ]);
+        Wallet::create([
+            'user_id' => 1,
+            'balance' => 1000,
+        ]);
         // Transaction::create([
         //     'user_id' => 2,
         //     'wallet_id' => 2,
