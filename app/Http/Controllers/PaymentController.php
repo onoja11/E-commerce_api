@@ -70,9 +70,9 @@ class PaymentController extends Controller
             }
 
             // Redirect back to React frontend
-            return redirect(env("FRONTEND_URL")."/wallet?status=success&reference={$reference}");
+            return redirect(env("FRONTEND_URL")."wallet?status=success&reference={$reference}");
         }
 
-        return redirect(env("FRONTEND_URL")."/wallet?status=failed&reference={$reference}");
+        return redirect(env("FRONTEND_URL")."wallet?status=failed&reference={$reference}");
     }
 }
