@@ -31,8 +31,13 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Payment initialization failed'], 500);
         }
 
+        // Ensure wallet exists
+        $wallet = Wallet::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0]
+        );
+
         // Save a pending transaction
-        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
         ModelsTransaction::create([
             'user_id'     => $user->id,
             'wallet_id'   => $wallet->id,
@@ -59,8 +64,13 @@ class PaymentController extends Controller
 
             // Find pending transaction
             $transaction = ModelsTransaction::where('reference', $reference)->first();
+
             if ($transaction) {
-                $wallet = $transaction->wallet;
+                $wallet = $transaction->wallet ?? Wallet::firstOrCreate([
+                    'user_id' => $transaction->user_id
+                ], [
+                    'balance' => 0
+                ]);
 
                 // Update wallet balance
                 $wallet->balance += $amount;
@@ -69,10 +79,14 @@ class PaymentController extends Controller
                 // Update transaction status
                 $transaction->description = 'income';
                 $transaction->save();
+            } else {
+                // \Log::error("Callback: Transaction not found for reference {$reference}");
             }
 
             return redirect(env("FRONTEND_URL") . "/wallet?status=success&reference={$reference}");
         }
+
+        // \Log::error("Callback failed for reference {$reference}", $verification);
 
         return redirect(env("FRONTEND_URL") . "/wallet?status=failed&reference={$reference}");
     }
