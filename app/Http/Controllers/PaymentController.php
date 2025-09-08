@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -17,12 +18,13 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:100',
             'email'  => 'required|email',
         ]);
-        $user = User::where('email', $request->email)->first();
+
+        $user = User::where('email', $request->email)->firstOrFail();
 
         $payment = Transaction::initialize([
             'amount'       => $request->amount * 100, // Paystack uses kobo
             'email'        => $request->email,
-            'callback_url' => env("APP_URL").'/api/pay/callback',
+            'callback_url' => env("APP_URL") . '/api/pay/callback',
         ]);
 
         if (!$payment['status']) {
@@ -30,14 +32,14 @@ class PaymentController extends Controller
         }
 
         // Save a pending transaction
-        $wallet = Wallet::where('user_id', $user->id)->first();
+        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
         ModelsTransaction::create([
-            'user_id'   => $user->id,
-            'wallet_id' => $wallet->id,
-            'amount'    => $request->amount,
+            'user_id'     => $user->id,
+            'wallet_id'   => $wallet->id,
+            'amount'      => $request->amount,
             'description' => 'pending',
-            'order_id'  => null, 
-            'reference' => $payment['data']['reference'],
+            'order_id'    => null,
+            'reference'   => $payment['data']['reference'],
         ]);
 
         return response()->json([
@@ -69,10 +71,9 @@ class PaymentController extends Controller
                 $transaction->save();
             }
 
-            // Redirect back to React frontend
-            return redirect(env("FRONTEND_URL")."wallet?status=success&reference={$reference}");
+            return redirect(env("FRONTEND_URL") . "/wallet?status=success&reference={$reference}");
         }
 
-        return redirect(env("FRONTEND_URL")."wallet?status=failed&reference={$reference}");
+        return redirect(env("FRONTEND_URL") . "/wallet?status=failed&reference={$reference}");
     }
 }
