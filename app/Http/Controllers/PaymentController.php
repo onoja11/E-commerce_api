@@ -37,14 +37,12 @@ class PaymentController extends Controller
             ['balance' => 0]
         );
 
-         $wallet->balance += $request->amount*100;
-                $wallet->save();
         // Save a pending transaction
         ModelsTransaction::create([
             'user_id'     => $user->id,
             'wallet_id'   => $wallet->id,
             'amount'      => $request->amount,
-            'description' => 'income',
+            'description' => 'pending',
             'order_id'    => null,
             'reference'   => $payment['data']['reference'],
         ]);
