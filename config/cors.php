@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://e-commerce-prll.onrender.com','http://localhost:3000/'],
+    'allowed_origins' => ['https://e-commerce-sooty-ten-75.vercel.app'],
 
     'allowed_origins_patterns' => [],
 
