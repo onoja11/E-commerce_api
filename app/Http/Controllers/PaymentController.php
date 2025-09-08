@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -11,40 +10,34 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    // Initialize Paystack payment
+    // Initialize payment
     public function initialize(Request $request)
     {
         $request->validate([
             'amount' => 'required|numeric|min:100',
             'email'  => 'required|email',
         ]);
-
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        // Create wallet if user does not have one
-        $wallet = Wallet::firstOrCreate(
-            ['user_id' => $user->id],
-            ['balance' => 0]
-        );
+        $user = User::where('email', $request->email)->first();
 
         $payment = Transaction::initialize([
             'amount'       => $request->amount * 100, // Paystack uses kobo
             'email'        => $request->email,
-            'callback_url' => env("APP_URL") . '/api/pay/callback',
+            'callback_url' => env("APP_URL").'/api/pay/callback',
         ]);
 
         if (!$payment['status']) {
             return response()->json(['message' => 'Payment initialization failed'], 500);
         }
 
-        // Save pending transaction
+        // Save a pending transaction
+        $wallet = Wallet::where('user_id', $user->id)->first();
         ModelsTransaction::create([
-            'user_id'     => $user->id,
-            'wallet_id'   => $wallet->id,
-            'amount'      => $request->amount,
+            'user_id'   => $user->id,
+            'wallet_id' => $wallet->id,
+            'amount'    => $request->amount,
             'description' => 'pending',
-            'order_id'    => null,
-            'reference'   => $payment['data']['reference'],
+            'order_id'  => null, 
+            'reference' => $payment['data']['reference'],
         ]);
 
         return response()->json([
@@ -64,22 +57,22 @@ class PaymentController extends Controller
 
             // Find pending transaction
             $transaction = ModelsTransaction::where('reference', $reference)->first();
-            if ($transaction && $transaction->description !== 'income') {
+            if ($transaction) {
                 $wallet = $transaction->wallet;
 
-                // Prevent double credit
-                if ($wallet) {
-                    $wallet->balance += $amount;
-                    $wallet->save();
-                }
+                // Update wallet balance
+                $wallet->balance += $amount;
+                $wallet->save();
 
+                // Update transaction status
                 $transaction->description = 'income';
                 $transaction->save();
             }
 
-            return redirect(env("FRONTEND_URL") . "/wallet?status=success&reference={$reference}");
+            // Redirect back to React frontend
+            return redirect(env("FRONTEND_URL")."wallet?status=success&reference={$reference}");
         }
 
-        return redirect(env("FRONTEND_URL") . "/wallet?status=failed&reference={$reference}");
+        return redirect(env("FRONTEND_URL")."wallet?status=failed&reference={$reference}");
     }
 }
