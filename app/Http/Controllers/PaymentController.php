@@ -30,7 +30,7 @@ class PaymentController extends Controller
         }
 
         // Save a pending transaction
-        $wallet = Wallet::where('user_id', $request->user_id)->first();
+        $wallet = Wallet::where('user_id', $user->id)->first();
         ModelsTransaction::create([
             'user_id'   => $user->id,
             'wallet_id' => $wallet->id,
