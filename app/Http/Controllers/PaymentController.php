@@ -21,7 +21,7 @@ class PaymentController extends Controller
         $payment = Transaction::initialize([
             'amount'       => $request->amount * 100, // Paystack uses kobo
             'email'        => $request->email,
-            'callback_url' => env("APP_URL").'/api/pay/callback', // ✅ point to backend, not frontend
+            'callback_url' => env("APP_URL").'/api/pay/callback',
         ]);
 
         if (!$payment['status']) {
