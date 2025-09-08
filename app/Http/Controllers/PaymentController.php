@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction as ModelsTransaction;
+use App\Models\User;
 use App\Models\Wallet;
 use Binkode\Paystack\Support\Transaction;
 use Illuminate\Http\Request;
@@ -15,8 +16,8 @@ class PaymentController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:100',
             'email'  => 'required|email',
-            'user_id' => 'required|exists:users,id',
         ]);
+        $user = User::where('email', $request->email)->first();
 
         $payment = Transaction::initialize([
             'amount'       => $request->amount * 100, // Paystack uses kobo
@@ -31,7 +32,7 @@ class PaymentController extends Controller
         // Save a pending transaction
         $wallet = Wallet::where('user_id', $request->user_id)->first();
         ModelsTransaction::create([
-            'user_id'   => $request->user_id,
+            'user_id'   => $user->id,
             'wallet_id' => $wallet->id,
             'amount'    => $request->amount,
             'description' => 'pending',
