@@ -100,7 +100,7 @@ public function store(Request $request)
         ]);
 
         if($user->review_status !== 'stop'){
-            $user->review_status = true;
+            $user->review_status = 1;
             $user->save();  
         }
        
