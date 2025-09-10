@@ -61,24 +61,29 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        $product = Product::findOrFail($id);
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'price' => 'sometimes|required|numeric',
-            'stock' => 'sometimes|required|integer',
-            'image' => 'nullable|image',
-            'category_id' => 'sometimes|required|exists:categories,id',
-        ]);
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
-            $request->merge(['image' => $imagePath]);
-        }
-        $product->update($request->all());
-        return response()->json($product);
+  public function update(Request $request, string $id)
+{
+    $product = Product::findOrFail($id);
+
+    $validated = $request->validate([
+        'name' => 'sometimes|required|string|max:255',
+        'description' => 'sometimes|required|string',
+        'price' => 'sometimes|required|numeric',
+        'stock' => 'sometimes|required|integer',
+        'image' => 'nullable|image',
+        'category_id' => 'sometimes|required|exists:categories,id',
+    ]);
+
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('images', 'public');
+        $validated['image'] = $imagePath;
     }
+
+    $product->update($validated);
+
+    return response()->json($product);
+}
+
 
     /**
      * Remove the specified resource from storage.
