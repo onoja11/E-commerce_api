@@ -22,7 +22,7 @@ class PaymentController extends Controller
         $user = User::where('email', $request->email)->firstOrFail();
 
         $payment = Transaction::initialize([
-            'amount'       => $request->amount * 100, // Paystack uses kobo
+            'amount'       => $request->amount * 100, 
             'email'        => $request->email,
             'callback_url' => env("APP_URL") . '/api/pay/callback',
         ]);

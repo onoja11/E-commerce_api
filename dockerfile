@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     nodejs \
     npm \
-    && docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 
 # Install Composer from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -43,7 +43,7 @@ EXPOSE 8000
 CMD php artisan migrate --force && \
     php artisan db:seed --force && \
     php artisan config:cache && \
-     php artisan storage:link && \
+    php artisan storage:link && \
     php artisan route:cache && \
     php artisan view:cache && \
     php artisan serve --host=0.0.0.0 --port=8000
