@@ -99,10 +99,10 @@ public function store(Request $request)
             'description' => 'expense'
         ]);
 
-        $user->update([
-            'review_status' => $user->review_status !== 'stop' ? '1' : $user->review_status,
-        ]);
-
+        if($user->review_status !== 'stop'){
+            $user->review_status = 'active';
+            $user->save();  
+        }
        
 
         DB::commit();
