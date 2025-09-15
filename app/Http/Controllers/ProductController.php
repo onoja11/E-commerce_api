@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -33,7 +34,8 @@ class ProductController extends Controller
     $imagePath = null;
 
     if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('images', 'public');
+        // $imagePath = $request->file('image')->store('images', 'public');
+        $imagePath = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
     }
 
     $product = Product::create([
@@ -75,9 +77,10 @@ class ProductController extends Controller
     ]);
 
     if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('images', 'public');
-        $validated['image'] = $imagePath;
+        $uploadedFileUrl = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
+        $validated['image'] = $uploadedFileUrl;
     }
+        
 
     $product->update($validated);
 
