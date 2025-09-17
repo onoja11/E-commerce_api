@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     nodejs \
     npm \
+    supervisor \
     && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 
 # Install Composer from official image
@@ -27,7 +28,7 @@ COPY . .
 # Create persistent SQLite database file in /var (Render allows persistence here)
 RUN mkdir -p /var && touch /var/database.sqlite
 
-# Install PHP dependencies (for production)
+# Install PHP dependencies (optimized for production)
 RUN composer install --no-dev --optimize-autoloader
 
 # Install Node dependencies and build assets only if a package.json exists
@@ -39,17 +40,15 @@ RUN chmod -R 755 storage bootstrap/cache database
 # Expose Laravel's default serve port
 EXPOSE 8000
 
-# Run migrations, optimize config, and start Laravel server
+# Use Supervisor to run both queue worker & web server
+COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Run migrations, cache config, link storage, and start Supervisor
 CMD php artisan migrate --force && \
-    # php artisan config:cache && \
-    php artisan config:clear&& \
-    php artisan cache:clear&& \
-    php artisan config:cache&& \
     php artisan storage:link && \
+    php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
-    php artisan serve --host=0.0.0.0 --port=8000
-
-
-
-
+    supervisord -c /etc/supervisor/conf.d/supervisord.conf
